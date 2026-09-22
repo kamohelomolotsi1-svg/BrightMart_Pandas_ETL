@@ -99,3 +99,145 @@ print(clean_df["category"].isna().sum())
 
 print("Raw category nulls:", df["category"].isna().sum())
 print("Clean category nulls:", clean_df["category"].isna().sum())
+
+
+# ---------------------------------------------------------
+# Investigate anonymous customer transactions
+# ---------------------------------------------------------
+
+anonymous_customers = clean_df[
+    clean_df["customer_first_name"].isna()
+]
+
+print("\nAnonymous customer transactions:")
+print(anonymous_customers.shape)
+
+print(
+    anonymous_customers[
+        [
+            "customer_first_name",
+            "customer_last_name",
+            "customer_email",
+            "customer_phone",
+            "customer_city",
+            "customer_province",
+            "customer_loyalty_tier",
+            "customer_since",
+            "payment_method",
+            "transaction_amount"
+        ]
+    ].head(10)
+)
+
+
+# ---------------------------------------------------------
+# Investigate whether missing emails can be recovered
+# ---------------------------------------------------------
+
+known_customers_missing_email = clean_df[
+    clean_df["customer_email"].isna()
+    & clean_df["customer_first_name"].notna()
+]
+
+print("\nKnown customers with missing email:")
+print(known_customers_missing_email.shape)
+
+print(
+    known_customers_missing_email[
+        [
+            "customer_first_name",
+            "customer_last_name",
+            "customer_phone",
+            "customer_email"
+        ]
+    ].head(10)
+)
+
+
+# ---------------------------------------------------------
+# Investigate all records for one customer
+# ---------------------------------------------------------
+
+musa_records = clean_df[
+    (clean_df["customer_first_name"] == "Musa")
+    & (clean_df["customer_last_name"] == "Ntuli")
+]
+
+print("\nAll records for Musa Ntuli:")
+
+print(
+    musa_records[
+        [
+            "customer_first_name",
+            "customer_last_name",
+            "customer_phone",
+            "customer_city",
+            "customer_province",
+            "customer_email"
+        ]
+    ].drop_duplicates()
+)
+
+
+# ---------------------------------------------------------
+# Check customer-email consistency
+# ---------------------------------------------------------
+
+customer_email_counts = (
+    clean_df[
+        clean_df["customer_first_name"].notna()
+        & clean_df["customer_email"].notna()
+    ]
+    .groupby(
+        [
+            "customer_first_name",
+            "customer_last_name",
+            "customer_phone"
+        ]
+    )["customer_email"]
+    .nunique()
+    .reset_index(name="unique_email_count")
+)
+
+print("\nCustomer email consistency check:")
+
+print(
+    customer_email_counts[
+        customer_email_counts["unique_email_count"] > 1
+    ]
+)
+
+print(
+    "\nCustomers with multiple different known emails:",
+    (
+        customer_email_counts["unique_email_count"] > 1
+    ).sum()
+)
+
+
+# ---------------------------------------------------------
+# Check how many missing emails are recoverable
+# ---------------------------------------------------------
+
+email_lookup = (
+    clean_df[
+        clean_df["customer_email"].notna()
+    ]
+    .drop_duplicates(
+        subset=[
+            "customer_first_name",
+            "customer_last_name",
+            "customer_phone"
+        ]
+    )
+    .set_index(
+        [
+            "customer_first_name",
+            "customer_last_name",
+            "customer_phone"
+        ]
+    )["customer_email"]
+)
+
+print("\nEmail lookup sample:")
+print(email_lookup.head())
